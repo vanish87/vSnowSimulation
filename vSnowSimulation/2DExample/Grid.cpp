@@ -112,6 +112,8 @@ void Grid::calculateVolumes() const{
 //Calculate next timestep velocities for use in implicit integration
 void Grid::explicitVelocities(const Vector2f& gravity){
 	//First, compute the forces
+	//=>4.computer grid forces
+	
 	//We store force in velocity_new, since we're not using that variable at the moment
 	for (int i=0; i<obj->size; i++){
 		Particle& p = obj->particles[i];
@@ -131,6 +133,7 @@ void Grid::explicitVelocities(const Vector2f& gravity){
 		}
 	}
 	
+	//5.grid velocity update
 	//Now we have all grid forces, compute velocities (euler integration)
 	for (int i=0; i<nodes_length; i++){
 		GridNode &node = nodes[i];

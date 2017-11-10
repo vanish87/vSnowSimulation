@@ -1,4 +1,5 @@
 #include "main.h"
+#include <chrono>
 
 using namespace std;
 
@@ -277,7 +278,7 @@ void *simulate(void *args){
 	simulating = true;
 	struct timespec delay;
 	delay.tv_sec = 0;
-	clock_t start = clock(), end;
+	clock_t start = clock(), end = 0;
 	cout << "Starting simulation..." << endl;
 	Vector2f gravity = Vector2f(0, GRAVITY);
 	
@@ -288,17 +289,27 @@ void *simulate(void *args){
 		cum_sum += TIMESTEP;
 		
 		//Initialize FEM grid
+		//1.P2G: compute mass
+		//3.identify freedoms
 		grid->initializeMass();
+		//1.P2G: compute momentum
+		//2.Compute velocities
+		//3.identify freedoms
 		grid->initializeVelocities();
-		//Compute grid velocities
+		//4.Compute grid forces
+		//5.velocity update
+		//6.update deformation gradient
 		grid->explicitVelocities(gravity);
 #if ENABLE_IMPLICIT
 		if (IMPLICIT_RATIO > 0)
 			grid->implicitVelocities();
 #endif
 		//Map back to particles
+		//7.G2P
 		grid->updateVelocities();
 		//Update particle data
+		//6. update particle deformation gradient
+		//8.particle advection
 		snow->update();
 		
 		//Redraw snow
@@ -312,12 +323,12 @@ void *simulate(void *args){
 		float diff = (end_new-end)/(float) CLOCKS_PER_SEC;
 		end = end_new;
 		if (diff < TIMESTEP){
-			delay.tv_nsec = 1/(TIMESTEP-diff);
-			nanosleep(&delay, NULL);
+			long long nanos= 1/(TIMESTEP-diff);
+			std::this_thread::sleep_for(std::chrono::nanoseconds(nanos));
 		}
 		//Slow motion playback
-		delay.tv_nsec = SLO_MO;
-		nanosleep(&delay, NULL);
+		long long nanos = SLO_MO;
+		std::this_thread::sleep_for(std::chrono::nanoseconds(nanos));
 #endif
 	}
 
@@ -343,7 +354,7 @@ void redraw(){
 	
 	if (simulating){
 		//Grid nodes
-                /*
+                
 		glPointSize(1);
 		glColor3f(0, .7, 1);
 		glBegin(GL_POINTS);
@@ -352,7 +363,7 @@ void redraw(){
 				glVertex2fv((grid->origin+grid->cellsize*Vector2f(i, j)).data);
 		}
 		glEnd();
-                 */
+                 
 
 		//Snow particles
 		if (SUPPORTS_POINT_SMOOTH)
